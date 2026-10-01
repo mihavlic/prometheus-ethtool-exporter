@@ -815,14 +815,17 @@ def main():  # pragma: no cover
         ip = ip.replace("[", "").replace("]", "")
         collector.logger.debug(f"Serving metrics on {ip}:{port}")
 
-        server, thread_obj = start_http_server(port, ip, registry=registry)
+        # On debian buster and bookworm, prometheus_client returns None rather than (server, thread)
+        result = start_http_server(int(port), ip, registry=registry)
         while True:
             try:
                 sleep(1)
             except (KeyboardInterrupt, SystemExit):
                 break
-        server.shutdown()
-        thread_obj.join(1.0)
+        if result is not None:
+            server, thread_obj = result
+            server.shutdown()
+            thread_obj.join(1.0)
         exit(0)
 
     # If arguments for serving to file are present we use them.
